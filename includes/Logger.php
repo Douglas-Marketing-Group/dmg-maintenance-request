@@ -2,8 +2,6 @@
 
 namespace DMG\DMGMaintenanceRequest;
 
-use wpdb;
-
 if (! defined('ABSPATH')) {
     exit;
 }
