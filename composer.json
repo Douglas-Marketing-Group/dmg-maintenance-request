@@ -1,0 +1,11 @@
+{
+    "name": "dmg/dmg-maintenance-request",
+    "autoload": {
+        "psr-4": {
+            "DMG\\DMGMaintenanceRequest\\": "includes/"
+        }
+    },
+    "require": {
+        "vlucas/phpdotenv": "^5.6"
+    }
+}
