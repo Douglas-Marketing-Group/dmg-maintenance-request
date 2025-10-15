@@ -2,6 +2,10 @@
 
 namespace DMG\DMGMaintenanceRequest;
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 class DMGMaintenanceRequest
 {
     public static function check_signature()
