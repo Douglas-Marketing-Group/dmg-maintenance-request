@@ -23,7 +23,7 @@ class DMGMaintenanceRequest
         $sig   = isset($_GET['sig']) ? sanitize_text_field($_GET['sig']) : '';
 
         if (! $email || ! $env || ! $exp || ! $sig) {
-            Logger::log('Missing or incomplete request parameters.', [
+            Logger::log('Missing or incomplete request parameters', [
                 'email' => $email,
                 'env'   => $env,
                 'sig'   => $sig,
@@ -35,7 +35,7 @@ class DMGMaintenanceRequest
 
         // Step 2: Expiration check
         if (time() > $exp) {
-            Logger::log('This maintenance request link has expired.', [
+            Logger::log('This maintenance request link has expired', [
                 'email' => $email,
                 'env'   => $env,
                 'sig'   => $sig,
@@ -49,7 +49,7 @@ class DMGMaintenanceRequest
         $expected_sig = md5($env . $email . $exp . DMG_MAINT_SECRET);
 
         if (!hash_equals($expected_sig, $sig)) {
-            Logger::log('Invalid maintenance request signature.', [
+            Logger::log('Invalid maintenance request signature', [
                 'email' => $email,
                 'env'   => $env,
                 'sig'   => $sig,
