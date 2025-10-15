@@ -20,7 +20,7 @@ if (class_exists(\Dotenv\Dotenv::class)) {
 
 define('DMG_MAINT_SECRET', $_ENV['DMG_MAINT_SECRET'] ?? '');
 
-add_action('template_redirect', [\DMG\DMGMaintenanceRequest\DMGMaintenanceRequest::class, 'check_signature']);
+add_action('init', [\DMG\DMGMaintenanceRequest\DMGMaintenanceRequest::class, 'init']);
 
 register_activation_hook(__FILE__, [\DMG\DMGMaintenanceRequest\Installer::class, 'activate']);
 add_action('plugins_loaded', [\DMG\DMGMaintenanceRequest\Installer::class, 'init']);

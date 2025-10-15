@@ -8,6 +8,18 @@ if (! defined('ABSPATH')) {
 
 class DMGMaintenanceRequest
 {
+    public static function init(): void
+    {
+        // Validate the maintenance request link on page load
+        add_action('template_redirect', [\DMG\DMGMaintenanceRequest\DMGMaintenanceRequest::class, 'check_signature']);
+
+        // This fires on all Elementor Pro form submissions
+        add_action('elementor_pro/forms/new_record', [self::class, 'handle_form_submission'], 10, 2);
+    }
+
+    /**
+     * Validates the maintenance request link.
+     */
     public static function check_signature()
     {
         $page = get_page_by_path('site-maintenance-request'); // ← your Elementor page slug
@@ -63,41 +75,97 @@ class DMGMaintenanceRequest
         // Page is valid — Elementor renders the page and shows the form.
     }
 
-    private static function process_submission()
+    /**
+     * Handles Elementor form submissions.
+     *
+     * @param \ElementorPro\Modules\Forms\Classes\Record $record
+     * @param \ElementorPro\Modules\Forms\Classes\Ajax_Handler $ajax_handler
+     */
+    public static function handle_form_submission($record, $ajax_handler): void
     {
-        $email = sanitize_email($_POST['email']);
-        $env   = sanitize_text_field($_POST['env']);
-        $exp   = intval($_POST['exp']);
-        $sig   = sanitize_text_field($_POST['sig']);
+        $form_name = $record->get_form_settings('form_name');
 
-        // Verify again before accepting (defense in depth)
-        if (md5($env . $email . $exp . DMG_MAINT_SECRET) !== $sig) {
-            wp_die('Invalid signature.', 'Invalid', 403);
+        // Only handle the maintenance confirmation form
+        if (strtolower($form_name) !== 'site maintenance request') {
+            return;
         }
 
-        // Prepare webhook payload
+        $raw_fields = $record->get('fields');
+        $fields = [];
+        foreach ($raw_fields as $key => $field) {
+            $fields[$key] = $field['value'];
+        }
+
+        Logger::log('Elementor form submitted', $fields);
+
+        $email = $fields['email'] ?? '';
+        $env   = sanitize_text_field($fields['env'] ?? '');
+        $exp   = intval($fields['exp'] ?? 0);
+        $sig   = sanitize_text_field($fields['sig'] ?? '');
+
+        $expected = md5($env . $email . $exp . DMG_MAINT_SECRET);
+        if (!hash_equals($expected, $sig)) {
+            $ajax_handler->add_error_message('Invalid or expired link. Please request a new maintenance link or <a style="font-weight: 600;" href="/contact">contact us directly</a>.');
+            Logger::log('Invalid signature on form submit', compact('email', 'env', 'sig', 'expected'));
+            return;
+        }
+
         $payload = [
-            'env'   => $env,
-            'email' => $email,
-            'exp'   => $exp,
-            'sig'   => $sig,
-            'timestamp' => time(),
+            'env'        => $env,
+            'email'      => $email,
+            'exp'        => $exp,
+            'sig'        => $sig,
+            'timestamp'  => time(),
+            'ip'         => $_SERVER['REMOTE_ADDR'] ?? null,
+            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
         ];
 
-        $response = wp_remote_post('https://your-n8n-instance/webhook/maintenance-confirm', [
+        $url = getenv('DMG_N8N_WEBHOOK_URL') ?: ($_ENV['DMG_N8N_WEBHOOK_URL'] ?? get_option('dmg_n8n_webhook_url', ''));
+        $key = getenv('DMG_AUTOMATION_KEY')  ?: ($_ENV['DMG_AUTOMATION_KEY']  ?? get_option('dmg_automation_key', ''));
+
+        if (empty($url)) {
+            $ajax_handler->add_error_message('Internal configuration error — webhook URL missing.');
+            Logger::log('Missing webhook URL', compact('email', 'env'));
+            return;
+        }
+
+        $response = wp_remote_post($url, [
             'headers' => [
-                'Content-Type' => 'application/json',
-                'X-Automation-Key' => 'your_automation_key_here',
+                'Content-Type'     => 'application/json',
+                'X-Automation-Key' => $key,
             ],
             'body'    => wp_json_encode($payload),
-            'timeout' => 15,
+            'timeout' => 20,
         ]);
 
         if (is_wp_error($response)) {
-            wp_die('Failed to contact automation server.', 'Error', 500);
+            $ajax_handler->add_error_message('Could not contact automation server. Please try again later.');
+            Logger::log('Webhook POST error', [
+                'email' => $email,
+                'env'   => $env,
+                'error' => $response->get_error_message(),
+            ]);
+            return;
         }
 
-        echo '<p>✅ Thank you — your maintenance request has been received. Our team will begin processing it shortly.</p>';
-        exit;
+        $status = wp_remote_retrieve_response_code($response);
+        $body   = wp_remote_retrieve_body($response);
+
+        if ($status < 200 || $status >= 300) {
+            $ajax_handler->add_error_message('Automation service returned an error. Please try again later.');
+            Logger::log('Webhook response status issue', [
+                'email'  => $email,
+                'env'    => $env,
+                'status' => $status,
+                'body'   => $body,
+            ]);
+            return;
+        }
+
+        Logger::log('Webhook submitted successfully', [
+            'email'  => $email,
+            'env'    => $env,
+            'status' => $status,
+        ]);
     }
 }
