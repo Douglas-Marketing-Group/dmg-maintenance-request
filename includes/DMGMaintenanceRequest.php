@@ -23,24 +23,43 @@ class DMGMaintenanceRequest
         $sig   = isset($_GET['sig']) ? sanitize_text_field($_GET['sig']) : '';
 
         if (! $email || ! $env || ! $exp || ! $sig) {
-            wp_die('Missing or incomplete request parameters.', 'Invalid Request', 403);
+            Logger::log('Missing or incomplete request parameters.', [
+                'email' => $email,
+                'env'   => $env,
+                'sig'   => $sig,
+            ]);
+
+            wp_redirect(home_url('/maintenance-link-invalid/'));
+            exit;
         }
 
         // Step 2: Expiration check
         if (time() > $exp) {
-            wp_die('This maintenance request link has expired.', 'Link Expired', 403);
+            Logger::log('This maintenance request link has expired.', [
+                'email' => $email,
+                'env'   => $env,
+                'sig'   => $sig,
+            ]);
 
-            // wp_redirect(home_url('/maintenance-link-invalid/'));
-            // exit;
+            wp_redirect(home_url('/maintenance-link-invalid/'));
+            exit;
         }
 
         // Step 3: Signature validation
         $expected_sig = md5($env . $email . $exp . DMG_MAINT_SECRET);
 
         if (!hash_equals($expected_sig, $sig)) {
-            wp_die('Invalid maintenance request signature.', 'Invalid Request', 403);
+            Logger::log('Invalid maintenance request signature.', [
+                'email' => $email,
+                'env'   => $env,
+                'sig'   => $sig,
+            ]);
+
+            wp_redirect(home_url('/maintenance-link-invalid/'));
+            exit;
         }
 
+        // SUCCESS!!
         // Page is valid — Elementor renders the page and shows the form.
     }
 
