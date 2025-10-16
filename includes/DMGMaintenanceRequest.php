@@ -31,13 +31,18 @@ class DMGMaintenanceRequest
         // Step 1: Check for required query params
         $email = isset($_GET['email']) ? rawurldecode($_GET['email']) : '';
         $env   = isset($_GET['env']) ? sanitize_text_field($_GET['env']) : '';
+        $hid   = isset($_GET['hid']) ? sanitize_text_field($_GET['hid']) : '';
+        $aid   = isset($_GET['aid']) ? sanitize_text_field($_GET['aid']) : '';
         $exp   = isset($_GET['exp']) ? intval($_GET['exp']) : 0;
         $sig   = isset($_GET['sig']) ? sanitize_text_field($_GET['sig']) : '';
 
-        if (! $email || ! $env || ! $exp || ! $sig) {
+        if (!$email || !$env || !$exp || !$sig || !$hid) {
             Logger::log('Missing or incomplete request parameters', [
                 'email' => $email,
                 'env'   => $env,
+                'hid'   => $hid,
+                'aid'   => $aid,
+                'exp'   => $exp,
                 'sig'   => $sig,
             ]);
 
@@ -50,6 +55,9 @@ class DMGMaintenanceRequest
             Logger::log('This maintenance request link has expired', [
                 'email' => $email,
                 'env'   => $env,
+                'hid'   => $hid,
+                'aid'   => $aid,
+                'exp'   => $exp,
                 'sig'   => $sig,
             ]);
 
@@ -64,6 +72,9 @@ class DMGMaintenanceRequest
             Logger::log('Invalid maintenance request signature', [
                 'email' => $email,
                 'env'   => $env,
+                'hid'   => $hid,
+                'aid'   => $aid,
+                'exp'   => $exp,
                 'sig'   => $sig,
             ]);
 
@@ -102,6 +113,8 @@ class DMGMaintenanceRequest
         $env   = sanitize_text_field($fields['env'] ?? '');
         $exp   = intval($fields['exp'] ?? 0);
         $sig   = sanitize_text_field($fields['sig'] ?? '');
+        $hid   = sanitize_text_field($fields['hid'] ?? '');
+        $aid   = sanitize_text_field($fields['aid'] ?? '');
 
         $expected = md5($env . $email . $exp . DMG_MAINT_SECRET);
         if (!hash_equals($expected, $sig)) {
@@ -115,6 +128,8 @@ class DMGMaintenanceRequest
             'email'      => $email,
             'exp'        => $exp,
             'sig'        => $sig,
+            'hid'        => $hid,
+            'aid'        => $aid,
             'timestamp'  => time(),
             'ip'         => $_SERVER['REMOTE_ADDR'] ?? null,
             'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
