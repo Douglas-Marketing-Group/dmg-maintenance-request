@@ -23,6 +23,7 @@ define('DMG_MAINT_SECRET', $_ENV['DMG_MAINT_SECRET'] ?? '');
 define('DMG_MAINT_DISABLE_IDEMPOTENCY', getenv('DMG_MAINT_DISABLE_IDEMPOTENCY') === 'true');
 
 add_action('init', [\DMG\DMGMaintenanceRequest\DMGMaintenanceRequest::class, 'init']);
+add_action('plugins_loaded', [\DMG\DMGMaintenanceRequest\Installer::class, 'init']);
 
 register_activation_hook(__FILE__, [\DMG\DMGMaintenanceRequest\Installer::class, 'activate']);
-add_action('plugins_loaded', [\DMG\DMGMaintenanceRequest\Installer::class, 'init']);
+register_uninstall_hook(__FILE__, [\DMG\DMGMaintenanceRequest\Installer::class, 'uninstall']);
