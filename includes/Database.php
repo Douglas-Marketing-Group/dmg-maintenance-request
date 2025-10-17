@@ -8,7 +8,7 @@ if (! defined('ABSPATH')) {
 
 class Database
 {
-    private const SCHEMA_VERSION = '1.0.1';
+    private const SCHEMA_VERSION = '1.1.0';
     private const OPTION_KEY     = 'dmg_maint_db_version';
 
     /**
@@ -28,6 +28,18 @@ class Database
                 created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY  (id),
                 KEY event (event)
+            ) {$charset_collate};",
+
+            'dmg_maint_requests' => "CREATE TABLE {$wpdb->prefix}dmg_maint_requests (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                email varchar(255) NOT NULL,
+                env varchar(255) NOT NULL,
+                sig varchar(64) NOT NULL,
+                processed tinyint(1) unsigned NOT NULL DEFAULT 0,
+                created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY  (id),
+                UNIQUE KEY sig (sig),
+                KEY email (email)
             ) {$charset_collate};",
         ];
     }
