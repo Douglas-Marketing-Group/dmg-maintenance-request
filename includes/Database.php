@@ -17,30 +17,43 @@ class Database
     private static function get_schema(): array
     {
         global $wpdb;
-        $charset_collate = $wpdb->get_charset_collate();
+        $prefix = $wpdb->prefix;
+        $charset = $wpdb->get_charset_collate();
 
         return [
-            'dmg_maint_logs' => "CREATE TABLE {$wpdb->prefix}dmg_maint_logs (
-                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-                event varchar(255) NOT NULL,
-                context longtext NULL,
-                ip varchar(45) NULL,
-                created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY  (id),
-                KEY event (event)
-            ) {$charset_collate};",
+            'dmg_maint_logs' => [
+                'schema' => "CREATE TABLE {$prefix}dmg_maint_logs (
+                    id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                    event varchar(255) NOT NULL,
+                    context longtext NULL,
+                    ip varchar(45) NULL,
+                    created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY  (id)
+                ) {$charset};",
 
-            'dmg_maint_requests' => "CREATE TABLE {$wpdb->prefix}dmg_maint_requests (
-                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-                email varchar(255) NOT NULL,
-                env varchar(255) NOT NULL,
-                sig varchar(64) NOT NULL,
-                processed tinyint(1) unsigned NOT NULL DEFAULT 0,
-                created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY  (id),
-                UNIQUE KEY sig (sig),
-                KEY email (email)
-            ) {$charset_collate};",
+                'keys' => [
+                    "ALTER TABLE {$prefix}dmg_maint_logs ADD INDEX event (event)"
+                ],
+            ],
+
+            'dmg_maint_requests' => [
+                'schema' => "CREATE TABLE {$prefix}dmg_maint_requests (
+                    id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                    email varchar(255) NOT NULL,
+                    env varchar(255) NOT NULL,
+                    sig varchar(64) NOT NULL,
+                    status varchar(20) NOT NULL DEFAULT 'pending',
+                    created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at datetime NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY  (id)
+                ) {$charset};",
+
+                'keys' => [
+                    "ALTER TABLE {$prefix}dmg_maint_requests ADD INDEX sig (sig)",
+                    "ALTER TABLE {$prefix}dmg_maint_requests ADD INDEX email (email)",
+                    "ALTER TABLE {$prefix}dmg_maint_requests ADD INDEX status (status)"
+                ],
+            ],
         ];
     }
 
@@ -67,10 +80,45 @@ class Database
      */
     private static function apply_schema(): void
     {
+        global $wpdb;
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-        foreach (self::get_schema() as $name => $sql) {
-            dbDelta($sql);
+        $schema_definitions = self::get_schema();
+
+        foreach ($schema_definitions as $table => $definition) {
+            // 1️Apply base schema (columns only)
+            dbDelta($definition['schema']);
+
+            // 2️⃣ Sync indexes
+            self::sync_table_keys($table, $definition['keys']);
+        }
+    }
+
+    /**
+     * Sync indexes for a given table.
+     */
+    private static function sync_table_keys(string $table, array $keys): void
+    {
+        global $wpdb;
+
+        // Get current indexes
+        $existing = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}{$table}");
+        $existing_names = array_unique(array_map(fn($r) => $r->Key_name, $existing));
+
+        foreach ($keys as $sql) {
+            // Extract index name from "ADD INDEX name (col)"
+            if (!preg_match('/ADD\s+(?:UNIQUE\s+)?INDEX\s+([a-zA-Z0-9_]+)/i', $sql, $m)) {
+                continue;
+            }
+            $index_name = $m[1];
+
+            // Drop old index if exists (guarantees fresh definition)
+            if (in_array($index_name, $existing_names, true)) {
+                $wpdb->query("ALTER TABLE {$wpdb->prefix}{$table} DROP INDEX {$index_name}");
+            }
+
+            // Recreate index
+            $wpdb->query($sql);
         }
     }
 
