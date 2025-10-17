@@ -123,6 +123,13 @@ class DMGMaintenanceRequest
             return;
         }
 
+        // Idempotency check - prevent duplicate submissions
+        if (Idempotency::checkAndRecord($email, $env, $sig)) {
+            $ajax_handler->add_error_message('This maintenance request has already been submitted.');
+            Logger::log('Duplicate submission blocked', compact('email', 'env', 'sig'));
+            return;
+        }
+
         $payload = [
             'env'        => $env,
             'email'      => $email,
@@ -182,5 +189,8 @@ class DMGMaintenanceRequest
             'env'    => $env,
             'status' => $status,
         ]);
+
+        // Mark request as processed
+        Idempotency::markProcessed($sig);
     }
 }
