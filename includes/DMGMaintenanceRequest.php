@@ -15,6 +15,31 @@ class DMGMaintenanceRequest
 
         // This fires on all Elementor Pro form submissions
         add_action('elementor_pro/forms/new_record', [self::class, 'handle_form_submission'], 10, 2);
+
+        add_action('admin_notices', [self::class, 'show_admin_db_schema_notice'], 10, 2);
+    }
+
+    /**
+     * Show admin notice if DB schema was updated.
+     */
+    public static function show_admin_db_schema_notice(): void
+    {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        $updated_version = get_transient('dmg_maint_db_schema_updated');
+        if (!$updated_version) {
+            return;
+        }
+
+        $template_path = DMG_MAINT_PATH . 'templates/admin-notice-schema-updated.php';
+        echo $template_path;
+        if (file_exists($template_path)) {
+            include $template_path;
+        }
+
+        delete_transient('dmg_maint_db_schema_updated');
     }
 
     /**

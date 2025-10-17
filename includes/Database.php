@@ -56,6 +56,9 @@ class Database
         if ($installed !== $desired) {
             self::apply_schema();
             update_option(self::OPTION_KEY, $desired);
+
+            // Flag for admin notice
+            set_transient('dmg_maint_db_schema_updated', $desired);
         }
     }
 

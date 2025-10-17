@@ -18,7 +18,9 @@ if (class_exists(\Dotenv\Dotenv::class)) {
     $dotenv->safeLoad();
 }
 
+define('DMG_MAINT_PATH', plugin_dir_path(__FILE__));
 define('DMG_MAINT_SECRET', $_ENV['DMG_MAINT_SECRET'] ?? '');
+define('DMG_MAINT_DISABLE_IDEMPOTENCY', getenv('DMG_MAINT_DISABLE_IDEMPOTENCY') === 'true');
 
 add_action('init', [\DMG\DMGMaintenanceRequest\DMGMaintenanceRequest::class, 'init']);
 
