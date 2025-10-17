@@ -34,7 +34,6 @@ class DMGMaintenanceRequest
         }
 
         $template_path = DMG_MAINT_PATH . 'templates/admin-notice-schema-updated.php';
-        echo $template_path;
         if (file_exists($template_path)) {
             include $template_path;
         }
