@@ -172,6 +172,7 @@ class DMGMaintenanceRequest
 
         if (empty($url)) {
             $ajax_handler->add_error_message('Internal configuration error — webhook URL missing.');
+            Idempotency::markStatus($sig, 'failed');
             Logger::log('Missing webhook URL', compact('email', 'env'));
             return;
         }
@@ -187,6 +188,7 @@ class DMGMaintenanceRequest
 
         if (is_wp_error($response)) {
             $ajax_handler->add_error_message('Could not contact automation server. Please try again later.');
+            Idempotency::markStatus($sig, 'failed');
             Logger::log('Webhook POST error', [
                 'email' => $email,
                 'env'   => $env,
@@ -200,6 +202,7 @@ class DMGMaintenanceRequest
 
         if ($status < 200 || $status >= 300) {
             $ajax_handler->add_error_message('Automation service returned an error. Please try again later.');
+            Idempotency::markStatus($sig, 'failed');
             Logger::log('Webhook response status issue', [
                 'email'  => $email,
                 'env'    => $env,
@@ -216,6 +219,6 @@ class DMGMaintenanceRequest
         ]);
 
         // Mark request as processed
-        Idempotency::markProcessed($sig);
+        Idempotency::markStatus($sig, 'success');
     }
 }
