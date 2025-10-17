@@ -73,4 +73,18 @@ class Database
             dbDelta($sql);
         }
     }
+
+    /**
+     * Drop all plugin tables.
+     */
+    public static function drop_tables(): void
+    {
+        global $wpdb;
+
+        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}dmg_maint_logs");
+        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}dmg_maint_requests");
+
+        delete_option(self::OPTION_KEY);
+        delete_transient('dmg_maint_db_schema_updated');
+    }
 }
