@@ -19,9 +19,12 @@ class Idempotency
         global $wpdb;
         $table = "{$wpdb->prefix}dmg_maint_requests";
 
-        return (bool) $wpdb->get_var(
-            $wpdb->prepare("SELECT COUNT(*) FROM {$table} WHERE sig = %s", $sig)
+        // Only treat as duplicate if already marked as success
+        $status = $wpdb->get_var(
+            $wpdb->prepare("SELECT status FROM {$table} WHERE sig = %s", $sig)
         );
+
+        return $status === 'success';
     }
 
     /**
@@ -38,6 +41,7 @@ class Idempotency
                 'email'      => sanitize_email($email),
                 'env'        => sanitize_text_field($env),
                 'sig'        => sanitize_text_field($sig),
+                'status'     => 'pending',
                 'created_at' => current_time('mysql'),
             ],
             ['%s', '%s', '%s', '%s']
@@ -47,16 +51,19 @@ class Idempotency
     /**
      * Mark a record as processed.
      */
-    public static function markProcessed(string $sig): void
+    public static function markStatus(string $sig, string $status): void
     {
         global $wpdb;
         $table = "{$wpdb->prefix}dmg_maint_requests";
 
         $wpdb->update(
             $table,
-            ['processed' => 1],
+            [
+                'status'     => sanitize_text_field($status),
+                'updated_at' => current_time('mysql'),
+            ],
             ['sig' => sanitize_text_field($sig)],
-            ['%d'],
+            ['%s', '%s'],
             ['%s']
         );
     }
