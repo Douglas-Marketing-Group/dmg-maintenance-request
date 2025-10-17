@@ -8,7 +8,7 @@ if (! defined('ABSPATH')) {
 
 class Database
 {
-    private const SCHEMA_VERSION = '1.1.0';
+    private const SCHEMA_VERSION = '1.2.0';
     private const OPTION_KEY     = 'dmg_maint_db_version';
 
     /**
