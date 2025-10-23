@@ -56,6 +56,7 @@ class DMGMaintenanceRequest
         $email = isset($_GET['email']) ? rawurldecode($_GET['email']) : '';
         $env   = isset($_GET['env']) ? sanitize_text_field($_GET['env']) : '';
         $hid   = isset($_GET['hid']) ? sanitize_text_field($_GET['hid']) : '';
+        $pc   = isset($_GET['pc']) ? sanitize_text_field($_GET['pc']) : '';
         $aid   = isset($_GET['aid']) ? sanitize_text_field($_GET['aid']) : '';
         $exp   = isset($_GET['exp']) ? intval($_GET['exp']) : 0;
         $sig   = isset($_GET['sig']) ? sanitize_text_field($_GET['sig']) : '';
@@ -65,6 +66,7 @@ class DMGMaintenanceRequest
                 'email' => $email,
                 'env'   => $env,
                 'hid'   => $hid,
+                'pc'    => $pc,
                 'aid'   => $aid,
                 'exp'   => $exp,
                 'sig'   => $sig,
@@ -80,6 +82,7 @@ class DMGMaintenanceRequest
                 'email' => $email,
                 'env'   => $env,
                 'hid'   => $hid,
+                'pc'    => $pc,
                 'aid'   => $aid,
                 'exp'   => $exp,
                 'sig'   => $sig,
@@ -97,6 +100,7 @@ class DMGMaintenanceRequest
                 'email' => $email,
                 'env'   => $env,
                 'hid'   => $hid,
+                'pc'    => $pc,
                 'aid'   => $aid,
                 'exp'   => $exp,
                 'sig'   => $sig,
@@ -138,6 +142,7 @@ class DMGMaintenanceRequest
         $exp   = intval($fields['exp'] ?? 0);
         $sig   = sanitize_text_field($fields['sig'] ?? '');
         $hid   = sanitize_text_field($fields['hid'] ?? '');
+        $pc    = sanitize_text_field($fields['pc'] ?? '');
         $aid   = sanitize_text_field($fields['aid'] ?? '');
 
         $expected = md5($env . $email . $exp . DMG_MAINT_SECRET);
@@ -160,6 +165,7 @@ class DMGMaintenanceRequest
             'exp'        => $exp,
             'sig'        => $sig,
             'hid'        => $hid,
+            'pc'         => $pc,
             'aid'        => $aid,
             'timestamp'  => time(),
             'ip'         => $_SERVER['REMOTE_ADDR'] ?? null,
