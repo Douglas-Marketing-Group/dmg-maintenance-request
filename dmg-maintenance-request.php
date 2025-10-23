@@ -20,7 +20,10 @@ if (class_exists(\Dotenv\Dotenv::class)) {
 
 define('DMG_MAINT_PATH', plugin_dir_path(__FILE__));
 define('DMG_MAINT_SECRET', $_ENV['DMG_MAINT_SECRET'] ?? '');
-define('DMG_MAINT_DISABLE_IDEMPOTENCY', getenv('DMG_MAINT_DISABLE_IDEMPOTENCY') === 'true');
+define(
+    'DMG_MAINT_DISABLE_IDEMPOTENCY',
+    filter_var($_ENV['DMG_MAINT_DISABLE_IDEMPOTENCY'] ?: false, FILTER_VALIDATE_BOOLEAN)
+);
 
 add_action('init', [\DMG\DMGMaintenanceRequest\DMGMaintenanceRequest::class, 'init']);
 add_action('plugins_loaded', [\DMG\DMGMaintenanceRequest\Installer::class, 'init']);
