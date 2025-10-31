@@ -164,6 +164,14 @@ class DMGMaintenanceRequest
             return;
         }
 
+        // Validate required fields
+        if (empty($pc) || empty($cl)) {
+            $ajax_handler->add_error_message('Required information is missing. Please request a new maintenance link or <a style="font-weight: 600;" href="/contact">contact us directly</a>.');
+            Logger::log('Missing required fields on form submit', compact('email', 'env', 'pc', 'cl'));
+            Idempotency::markStatus($sig, 'failed');
+            return;
+        }
+
         $payload = [
             'env'        => $env,
             'email'      => $email,
