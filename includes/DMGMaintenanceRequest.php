@@ -56,7 +56,8 @@ class DMGMaintenanceRequest
         $email = isset($_GET['email']) ? rawurldecode($_GET['email']) : '';
         $env   = isset($_GET['env']) ? sanitize_text_field($_GET['env']) : '';
         $hid   = isset($_GET['hid']) ? sanitize_text_field($_GET['hid']) : '';
-        $pc   = isset($_GET['pc']) ? sanitize_text_field($_GET['pc']) : '';
+        $pc    = isset($_GET['pc']) ? sanitize_text_field($_GET['pc']) : '';
+        $cl    = isset($_GET['cl']) ? sanitize_text_field($_GET['cl']) : '';
         $aid   = isset($_GET['aid']) ? sanitize_text_field($_GET['aid']) : '';
         $exp   = isset($_GET['exp']) ? intval($_GET['exp']) : 0;
         $sig   = isset($_GET['sig']) ? sanitize_text_field($_GET['sig']) : '';
@@ -67,6 +68,7 @@ class DMGMaintenanceRequest
                 'env'   => $env,
                 'hid'   => $hid,
                 'pc'    => $pc,
+                'cl'    => $cl,
                 'aid'   => $aid,
                 'exp'   => $exp,
                 'sig'   => $sig,
@@ -83,6 +85,7 @@ class DMGMaintenanceRequest
                 'env'   => $env,
                 'hid'   => $hid,
                 'pc'    => $pc,
+                'cl'    => $cl,
                 'aid'   => $aid,
                 'exp'   => $exp,
                 'sig'   => $sig,
@@ -101,6 +104,7 @@ class DMGMaintenanceRequest
                 'env'   => $env,
                 'hid'   => $hid,
                 'pc'    => $pc,
+                'cl'    => $cl,
                 'aid'   => $aid,
                 'exp'   => $exp,
                 'sig'   => $sig,
@@ -143,6 +147,7 @@ class DMGMaintenanceRequest
         $sig   = sanitize_text_field($fields['sig'] ?? '');
         $hid   = sanitize_text_field($fields['hid'] ?? '');
         $pc    = sanitize_text_field($fields['pc'] ?? '');
+        $cl    = sanitize_text_field($fields['cl'] ?? '');
         $aid   = sanitize_text_field($fields['aid'] ?? '');
 
         $expected = md5($env . $email . $exp . DMG_MAINT_SECRET);
@@ -166,6 +171,7 @@ class DMGMaintenanceRequest
             'sig'        => $sig,
             'hid'        => $hid,
             'pc'         => $pc,
+            'cl'         => $cl,
             'aid'        => $aid,
             'timestamp'  => time(),
             'ip'         => $_SERVER['REMOTE_ADDR'] ?? null,
